@@ -3,6 +3,7 @@ import sys
 import json
 import webbrowser
 import shutil
+import winreg
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QListWidget, QLineEdit, QFileDialog, QLabel, QMessageBox
 from PyQt5.QtCore import QTimer
 from utils import update_date_in_filename, check_for_updates, download_update, apply_update, check_settings_compatibility
@@ -78,8 +79,8 @@ class UrlFolderSelector(QWidget):
                 QMessageBox.warning(self, '업데이트 실패', '업데이트 다운로드에 실패했습니다. 나중에 다시 시도합니다.')
         
         # 3일 후 다시 확인
-        # QTimer.singleShot(3 * 24 * 60 * 60 * 1000, self.check_updates)
-        QTimer.singleShot(30 * 1000, self.check_updates)
+        QTimer.singleShot(3 * 24 * 60 * 60 * 1000, self.check_updates)
+        # QTimer.singleShot(30 * 1000, self.check_updates)
 
         
     def add_url(self):
@@ -117,15 +118,36 @@ class UrlFolderSelector(QWidget):
             self.url_list.addItems(settings.get('urls', []))
             self.folder_path.setText(settings.get('folder', ''))
     
+
     def setup_autostart(self):
-        script_path = os.path.abspath(sys.argv[0])
-        batch_content = f'@echo off\npythonw "{script_path}" --startup'
-        startup_folder = os.path.join(os.path.expanduser("~"), "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "Startup")
-        batch_file = os.path.join(startup_folder, "run_url_folder_tasks.bat")
-        
         try:
-            with open(batch_file, 'w') as f:
+            # 현재 실행 파일의 경로를 가져옵니다.
+            if getattr(sys, 'frozen', False):
+                # PyInstaller로 만든 실행 파일의 경우
+                current_exe = sys.executable
+            else:
+                # 일반 Python 스크립트의 경우
+                current_exe = sys.argv[0]
+            
+            # .bat 파일 내용 생성
+            batch_content = f'@echo off\nstart "" "{current_exe}" --startup'
+            
+            # 시작 프로그램 폴더 경로
+            startup_folder = os.path.join(os.path.expanduser("~"), "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "Startup")
+            
+            # .bat 파일 경로
+            bat_file_path = os.path.join(startup_folder, "run_url_folder_script.bat")
+            
+            # .bat 파일 생성
+            with open(bat_file_path, 'w') as f:
                 f.write(batch_content)
-            QMessageBox.information(self, "성공", "이제 부팅 시 자동으로 실행됩니다!")
+            
+            # Windows 레지스트리에 등록 (추가적인 보장을 위해)
+            key = winreg.HKEY_CURRENT_USER
+            key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
+            with winreg.OpenKey(key, key_path, 0, winreg.KEY_ALL_ACCESS) as registry_key:
+                winreg.SetValueEx(registry_key, "URLFolderSelector", 0, winreg.REG_SZ, bat_file_path)
+            
+            QMessageBox.information(self, "성공", "자동 시작 설정이 완료되었습니다!")
         except Exception as e:
-            QMessageBox.warning(self, "에러", f"오류 발생!: {str(e)}")
+            QMessageBox.warning(self, "오류", f"자동 시작 설정 중 오류가 발생했습니다: {str(e)}")

@@ -11,3 +11,11 @@ if __name__ == '__main__':
         ex = UrlFolderSelector()
         ex.show()
         sys.exit(app.exec_())
+        
+# 빌드 순서
+# 1. 소스코드 수정
+# 2. version.py 파일 수정
+# 3. git 커밋
+# 4. git 태그 추가 (git tag v1.0.0)
+# 5. git push origin v1.0.0
+# 6. 깃허브 release 수정 

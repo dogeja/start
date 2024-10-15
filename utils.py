@@ -7,6 +7,16 @@ import re
 import requests
 import sys
 import subprocess
+from PyQt5.QtWidgets import QMessageBox
+
+def safe_copy(src, dst):
+    try:
+        if os.path.exists(dst):
+            return False, "해당 파일이 이미 존재합니다."
+        shutil.copy2(src, dst)
+        return True, "파일이 성공적으로 복사되었습니다."
+    except Exception as e:
+        return False, str(e)
 
 def update_date_in_filename(filename):
     match = re.search(r'\((\d{8})\)', filename)
@@ -42,30 +52,34 @@ def download_update(version):
     url = f'https://github.com/dogeja/start/releases/download/v{version}/환실련의아침.exe'
     response = requests.get(url)
     if response.status_code == 200:
-        with open('환실련의아침_new.exe', 'wb') as f:
+        current_exe = sys.executable
+        temp_exe = current_exe + '.new'
+        with open(temp_exe, 'wb') as f:
             f.write(response.content)
         return True
     return False
 
 def apply_update():
     current_exe = sys.executable
-    new_exe = '환실련의아침_new.exe'
+    temp_exe = current_exe + '.new'
+    
     batch_content = f'''
 @echo off
 :loop
-tasklist | find /i "환실련의아침.exe" > nul
+tasklist | find /i "{os.path.basename(current_exe)}" > nul
 if errorlevel 1 (
-    move /y "{new_exe}" "{current_exe}"
+    move /y "{temp_exe}" "{current_exe}"
     start "" "{current_exe}"
     del "%~f0"
-    del "환실련의아침_new.exe"
 ) else (
     timeout /t 1 > nul
     goto loop
 )
 '''
+    
     with open('update.bat', 'w') as f:
         f.write(batch_content)
+    
     subprocess.Popen('update.bat', shell=True)
     sys.exit()
 
@@ -78,14 +92,19 @@ def check_settings_compatibility(settings_file, new_version):
     with open(settings_file, 'w') as f:
         json.dump(settings, f)
 
-def process_folder(folder_path):
+def process_folder(folder_path, show_notification_func=None):
     files = [os.path.join(folder_path, f) for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))]
     if files:
         most_recent_file = max(files, key=os.path.getmtime)
         new_file_name = os.path.join(folder_path, update_date_in_filename(os.path.basename(most_recent_file)))
-        shutil.copy2(most_recent_file, new_file_name)
-        print(f"Duplicated file: {most_recent_file} to {new_file_name}")
-        os.startfile(new_file_name)
+        success, message = safe_copy(most_recent_file, new_file_name)
+        if success:
+            print(f"Duplicated file: {most_recent_file} to {new_file_name}")
+            os.startfile(new_file_name)
+        else:
+            print(message)
+            if show_notification_func:
+                show_notification_func("파일 복사", message)
         os.startfile(folder_path)
 
 def run_startup_tasks():
@@ -94,21 +113,29 @@ def run_startup_tasks():
         with open(settings_file, 'r') as f:
             settings = json.load(f)
         
-        # 업데이트 확인 및 적용
-        from version import __version__
-        update_available, latest_version = check_for_updates(__version__)
-        if update_available:
-            if download_update(latest_version):
-                check_settings_compatibility(settings_file, latest_version)
-                print(f"새 버전 ({latest_version})이 다운로드되었습니다. 업데이트를 적용합니다.")
-                apply_update()
-                return  # 업데이트 후 프로그램 재시작
-        
         # URL 열기
-        for url in settings.get('urls', []):
-            webbrowser.open(url)
-        
+        urls = settings.get('urls', [])
+        if urls:
+            chrome_path = 'C:/Program Files/Google/Chrome/Application/chrome.exe %s'
+            webbrowser.get(chrome_path).open_new(urls[0])  
+            for url in urls[1:]:
+                webbrowser.get(chrome_path).open_new_tab(url)      
+                    
         # 폴더 내 파일 처리
         folder_path = settings.get('folder', '')
         if folder_path:
             process_folder(folder_path)
+
+def cleanup_temp_files():
+    current_exe = sys.executable
+    temp_exe = current_exe + '.new'
+    if os.path.exists(temp_exe):
+        try:
+            os.remove(temp_exe)
+        except:
+            pass
+    if os.path.exists('update.bat'):
+        try:
+            os.remove('update.bat')
+        except:
+            pass

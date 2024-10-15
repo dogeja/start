@@ -12,17 +12,28 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v3
+
+      - name: Set up environment
+        run: |
+          echo "PYTHONIOENCODING=utf-8" >> $env:GITHUB_ENV
+          echo "PYTHONUTF8=1" >> $env:GITHUB_ENV
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: "3.9"
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pyinstaller
+
       - name: Build with PyInstaller
-        run: pyinstaller --onefile --noconsole --clean --name "환실련의아침" main.py
+        run: |
+          pyi-makespec --onefile --noconsole --name "환실련의아침" main.py
+          pyinstaller --clean 환실련의아침.spec
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')

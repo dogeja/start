@@ -62,7 +62,7 @@ class UrlFolderSelector(QWidget):
         save_btn = QPushButton('설정 저장')
         save_btn.clicked.connect(self.save_settings)
         self.layout.addWidget(save_btn)
-        
+        QMessageBox.information(self, "안내", "설정이 적용되었습니다!")
         self.setLayout(self.layout)
         self.load_settings()
 

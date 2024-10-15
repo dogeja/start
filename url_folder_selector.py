@@ -11,6 +11,7 @@ from version import __version__
 class UrlFolderSelector(QWidget):
     def __init__(self):
         super().__init__()
+        self.layout = QVBoxLayout()
         self.settings_file = os.path.join(os.path.expanduser("~"), "주소폴더세팅.json")
         self.initUI()
         self.load_settings()
@@ -18,10 +19,11 @@ class UrlFolderSelector(QWidget):
     def initUI(self):
         self.setWindowTitle(f'URL and Folder Selector v{__version__}')
         self.setGeometry(100, 100, 600, 400)
+        layout = QVBoxLayout()
+
         autostart_btn = QPushButton('자동 시작 설정')
         autostart_btn.clicked.connect(self.setup_autostart)
         layout.addWidget(autostart_btn)        
-        layout = QVBoxLayout()
         
         # URL 섹션
         url_label = QLabel('부팅 시 자동으로 열릴 주소:')

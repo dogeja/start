@@ -22,7 +22,7 @@ jobs:
           pip install -r requirements.txt
           pip install pyinstaller
       - name: Build with PyInstaller
-        run: pyinstaller --onefile main.py
+        run: pyinstaller --add-data --onefile --noconsole --clean main.py
       - name: Create Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')

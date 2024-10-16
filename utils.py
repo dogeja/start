@@ -8,6 +8,7 @@ import requests
 import sys
 import subprocess
 import winreg
+from utils import process_folder
 
 def safe_copy(src, dst):
     try:
@@ -109,14 +110,18 @@ def run_startup_tasks():
 
         urls = settings.get('urls', [])
         if urls:
-            chrome_path = 'C:/Program Files/Google/Chrome/Application/chrome.exe %s'
-            webbrowser.get(chrome_path).open_new(urls[0])  
-            for url in urls[1:]:
-                webbrowser.get(chrome_path).open_new_tab(url)      
+            try:
+                webbrowser.open(urls[0])  # 첫 번째 URL은 새 창에서 열기
+                for url in urls[1:]:
+                    webbrowser.open_new_tab(url)  # 나머지 URL은 새 탭에서 열기
+            except Exception as e:
+                print(f"URL을 여는 중 오류가 발생했습니다: {e}")
                     
         folder_path = settings.get('folder', '')
         if folder_path:
             process_folder(folder_path)
+    else:
+        print("설정 파일을 찾을 수 없습니다.")
 
 def cleanup_temp_files():
     current_exe = sys.executable

@@ -49,7 +49,7 @@ def check_for_updates(current_version):
         return False, None
 
 def download_update(version):
-    url = f'https://github.com/dogeja/start/releases/download/v{version}/환실련의아침.exe'
+    url = f'https://github.com/dogeja/start/releases/download/v{version}/default.exe'
     response = requests.get(url)
     if response.status_code == 200:
         current_exe = sys.executable

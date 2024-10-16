@@ -4,7 +4,7 @@ import json
 import winreg
 from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QListWidget, QLineEdit, QFileDialog, QLabel, QMessageBox, QStatusBar
 from PyQt5.QtCore import QTimer
-from utils import check_for_updates, download_update, apply_update, cleanup_temp_files, update_autostart, run_startup_tasks
+from utils import check_for_updates, download_update, apply_update, cleanup_temp_files, update_autostart, run_startup_tasks, process_folder
 from version import __version__
 
 class UrlFolderSelector(QMainWindow):
@@ -55,6 +55,11 @@ class UrlFolderSelector(QMainWindow):
         autostart_btn = QPushButton('자동 시작 설정')
         autostart_btn.clicked.connect(self.setup_autostart)
         self.layout.addWidget(autostart_btn)
+        
+        # 테스트 실행 버튼
+        test_run_btn = QPushButton('테스트 실행')
+        test_run_btn.clicked.connect(self.test_run)
+        self.layout.addWidget(test_run_btn)
         
         self.statusBar = self.statusBar()
         self.load_settings()
@@ -119,3 +124,8 @@ class UrlFolderSelector(QMainWindow):
             self.statusBar.showMessage("이제 부팅 시 자동 실행됩니다!", 3000)
         else:
             QMessageBox.warning(self, "오류", f"자동 시작 설정 중 오류가 발생했습니다: {message}")
+    
+    def test_run(self):
+        self.save_settings()
+        run_startup_tasks()
+        self.statusBar.showMessage("테스트 실행이 완료되었습니다.", 3000)

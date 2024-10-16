@@ -8,7 +8,6 @@ import requests
 import sys
 import subprocess
 import winreg
-from utils import process_folder
 
 def safe_copy(src, dst):
     try:

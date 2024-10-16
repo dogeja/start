@@ -7,7 +7,7 @@ import re
 import requests
 import sys
 import subprocess
-from PyQt5.QtWidgets import QMessageBox
+import winreg
 
 def safe_copy(src, dst):
     try:
@@ -49,7 +49,7 @@ def check_for_updates(current_version):
         return False, None
 
 def download_update(version):
-    url = f'https://github.com/dogeja/start/releases/download/v{version}/default.exe'
+    url = f'https://github.com/dogeja/start/releases/download/v{version}/환실련의아침.exe'
     response = requests.get(url)
     if response.status_code == 200:
         current_exe = sys.executable
@@ -83,16 +83,7 @@ if errorlevel 1 (
     subprocess.Popen('update.bat', shell=True)
     sys.exit()
 
-def check_settings_compatibility(settings_file, new_version):
-    with open(settings_file, 'r') as f:
-        settings = json.load(f)
-    
-    # 필요한 경우 여기에 설정 업데이트 로직 추가
-    
-    with open(settings_file, 'w') as f:
-        json.dump(settings, f)
-
-def process_folder(folder_path, show_notification_func=None):
+def process_folder(folder_path):
     files = [os.path.join(folder_path, f) for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))]
     if files:
         most_recent_file = max(files, key=os.path.getmtime)
@@ -103,8 +94,6 @@ def process_folder(folder_path, show_notification_func=None):
             os.startfile(new_file_name)
         else:
             print(message)
-            if show_notification_func:
-                show_notification_func("파일 복사", message)
         os.startfile(folder_path)
 
 def run_startup_tasks():
@@ -113,7 +102,11 @@ def run_startup_tasks():
         with open(settings_file, 'r') as f:
             settings = json.load(f)
         
-        # URL 열기
+        program_path = settings.get('program_path')
+        if not program_path or not os.path.exists(program_path):
+            print("프로그램 경로가 변경되었습니다. 자동 시작 설정을 다시 해주세요.")
+            return
+
         urls = settings.get('urls', [])
         if urls:
             chrome_path = 'C:/Program Files/Google/Chrome/Application/chrome.exe %s'
@@ -121,7 +114,6 @@ def run_startup_tasks():
             for url in urls[1:]:
                 webbrowser.get(chrome_path).open_new_tab(url)      
                     
-        # 폴더 내 파일 처리
         folder_path = settings.get('folder', '')
         if folder_path:
             process_folder(folder_path)
@@ -139,3 +131,25 @@ def cleanup_temp_files():
             os.remove('update.bat')
         except:
             pass
+
+def update_autostart():
+    try:
+        current_exe = sys.executable if getattr(sys, 'frozen', False) else sys.argv[0]
+        
+        settings_file = os.path.join(os.path.expanduser("~"), "주소폴더세팅.json")
+        settings = {}
+        if os.path.exists(settings_file):
+            with open(settings_file, 'r') as f:
+                settings = json.load(f)
+        settings['program_path'] = current_exe
+        with open(settings_file, 'w') as f:
+            json.dump(settings, f)
+        
+        key = winreg.HKEY_CURRENT_USER
+        key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
+        with winreg.OpenKey(key, key_path, 0, winreg.KEY_ALL_ACCESS) as registry_key:
+            winreg.SetValueEx(registry_key, "환실련의아침", 0, winreg.REG_SZ, f'"{current_exe}" --startup')
+        
+        return True, "자동 시작 설정이 업데이트되었습니다."
+    except Exception as e:
+        return False, f"자동 시작 설정 중 오류 발생: {str(e)}"

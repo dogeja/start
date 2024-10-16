@@ -1,12 +1,10 @@
 import os
 import sys
 import json
-import webbrowser
-import shutil
 import winreg
 from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QListWidget, QLineEdit, QFileDialog, QLabel, QMessageBox, QStatusBar
 from PyQt5.QtCore import QTimer
-from utils import update_date_in_filename, check_for_updates, download_update, apply_update, check_settings_compatibility, cleanup_temp_files
+from utils import check_for_updates, download_update, apply_update, cleanup_temp_files, update_autostart, run_startup_tasks
 from version import __version__
 
 class UrlFolderSelector(QMainWindow):
@@ -16,7 +14,7 @@ class UrlFolderSelector(QMainWindow):
         self.setCentralWidget(self.central_widget)
         self.layout = QVBoxLayout(self.central_widget)
         self.settings_file = os.path.join(os.path.expanduser("~"), "주소폴더세팅.json")
-        cleanup_temp_files()  # 임시 파일 정리
+        cleanup_temp_files()
         self.initUI()
         self.check_updates()
         
@@ -24,14 +22,10 @@ class UrlFolderSelector(QMainWindow):
         self.setWindowTitle(f'🌍환실련의아침✨ v{__version__}')
         self.setGeometry(100, 100, 600, 400)
         
-
         # URL 섹션
-        url_label = QLabel('부팅 시 자동으로 열릴 주소:')
-        self.layout.addWidget(url_label)
-        
+        self.layout.addWidget(QLabel('부팅 시 자동으로 열릴 주소:'))
         self.url_list = QListWidget()
         self.layout.addWidget(self.url_list)
-        
         self.url_input = QLineEdit()
         self.url_input.setPlaceholderText('여기에 주소 입력')
         self.layout.addWidget(self.url_input)
@@ -40,39 +34,30 @@ class UrlFolderSelector(QMainWindow):
         add_url_btn = QPushButton('주소 더하기')
         add_url_btn.clicked.connect(self.add_url)
         url_buttons.addWidget(add_url_btn)
-        
         remove_url_btn = QPushButton('주소 지우기')
         remove_url_btn.clicked.connect(self.remove_url)
         url_buttons.addWidget(remove_url_btn)
-        
         self.layout.addLayout(url_buttons)
         
         # 폴더 섹션
-        folder_label = QLabel('일일업무보고 폴더 선택:')
-        self.layout.addWidget(folder_label)
-        
+        self.layout.addWidget(QLabel('일일업무보고 폴더 선택:'))
         self.folder_path = QLineEdit()
         self.folder_path.setReadOnly(True)
         self.layout.addWidget(self.folder_path)
-        
         select_folder_btn = QPushButton('폴더 선택')
         select_folder_btn.clicked.connect(self.select_folder)
         self.layout.addWidget(select_folder_btn)
         
-        # 저장 버튼
+        # 설정 및 자동 시작 버튼
         save_btn = QPushButton('설정 저장')
         save_btn.clicked.connect(self.save_settings)
         self.layout.addWidget(save_btn)
-        
         autostart_btn = QPushButton('자동 시작 설정')
         autostart_btn.clicked.connect(self.setup_autostart)
-        self.layout.addWidget(autostart_btn) 
-                
-        # 상태 바 추가
-        self.statusBar = self.statusBar()
+        self.layout.addWidget(autostart_btn)
         
+        self.statusBar = self.statusBar()
         self.load_settings()
-        self.statusBar.showMessage("설정이 적용되었습니다!", 3000)  # 3초 동안 표시
 
     def check_updates(self):
         update_available, latest_version = check_for_updates(__version__)
@@ -88,7 +73,6 @@ class UrlFolderSelector(QMainWindow):
                 else:
                     QMessageBox.warning(self, '업데이트 실패', '업데이트 다운로드에 실패했습니다. 나중에 다시 시도해주세요.')
         
-        # 3일 후 다시 확인
         QTimer.singleShot(3 * 24 * 60 * 60 * 1000, self.check_updates)
         
     def add_url(self):
@@ -113,10 +97,12 @@ class UrlFolderSelector(QMainWindow):
     def save_settings(self):
         settings = {
             'urls': [self.url_list.item(i).text() for i in range(self.url_list.count())],
-            'folder': self.folder_path.text()
+            'folder': self.folder_path.text(),
+            'program_path': sys.executable if getattr(sys, 'frozen', False) else sys.argv[0]
         }
         with open(self.settings_file, 'w') as f:
             json.dump(settings, f)
+        self.statusBar.showMessage("설정이 적용되었습니다!", 3000)
     
     def load_settings(self):
         if os.path.exists(self.settings_file):
@@ -127,34 +113,9 @@ class UrlFolderSelector(QMainWindow):
             self.folder_path.setText(settings.get('folder', ''))
     
     def setup_autostart(self):
-        try:
-            # 현재 실행 파일의 경로를 가져옵니다.
-            if getattr(sys, 'frozen', False):
-                # PyInstaller로 만든 실행 파일의 경우
-                current_exe = sys.executable
-            else:
-                # 일반 Python 스크립트의 경우
-                current_exe = sys.argv[0]
-            
-            # .bat 파일 내용 생성
-            batch_content = f'@echo off\nstart "" "{current_exe}" --startup'
-            
-            # 시작 프로그램 폴더 경로
-            startup_folder = os.path.join(os.path.expanduser("~"), "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "Startup")
-            
-            # .bat 파일 경로
-            bat_file_path = os.path.join(startup_folder, "run_url_folder_script.bat")
-            
-            # .bat 파일 생성
-            with open(bat_file_path, 'w') as f:
-                f.write(batch_content)
-            
-            # Windows 레지스트리에 등록 (추가적인 보장을 위해)
-            key = winreg.HKEY_CURRENT_USER
-            key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
-            with winreg.OpenKey(key, key_path, 0, winreg.KEY_ALL_ACCESS) as registry_key:
-                winreg.SetValueEx(registry_key, "URLFolderSelector", 0, winreg.REG_SZ, bat_file_path)
-            
+        success, message = update_autostart()
+        if success:
             QMessageBox.information(self, "성공", "자동 시작 설정이 완료되었습니다!")
-        except Exception as e:
-            QMessageBox.warning(self, "오류", f"자동 시작 설정 중 오류가 발생했습니다: {str(e)}")
+            self.statusBar.showMessage("이제 부팅 시 자동 실행됩니다!", 3000)
+        else:
+            QMessageBox.warning(self, "오류", f"자동 시작 설정 중 오류가 발생했습니다: {message}")

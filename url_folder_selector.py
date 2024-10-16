@@ -21,13 +21,10 @@ class UrlFolderSelector(QMainWindow):
         self.check_updates()
         
     def initUI(self):
-        self.setWindowTitle(f'URL and Folder Selector v{__version__}')
+        self.setWindowTitle(f'🌍환실련의아침✨ v{__version__}')
         self.setGeometry(100, 100, 600, 400)
         
-        autostart_btn = QPushButton('자동 시작 설정')
-        autostart_btn.clicked.connect(self.setup_autostart)
-        self.layout.addWidget(autostart_btn)       
-        
+
         # URL 섹션
         url_label = QLabel('부팅 시 자동으로 열릴 주소:')
         self.layout.addWidget(url_label)
@@ -67,6 +64,10 @@ class UrlFolderSelector(QMainWindow):
         save_btn.clicked.connect(self.save_settings)
         self.layout.addWidget(save_btn)
         
+        autostart_btn = QPushButton('자동 시작 설정')
+        autostart_btn.clicked.connect(self.setup_autostart)
+        self.layout.addWidget(autostart_btn) 
+                
         # 상태 바 추가
         self.statusBar = self.statusBar()
         

@@ -22,14 +22,11 @@ def update_date_in_filename(filename):
     match = re.search(r'\((\d{8})\)', filename)
     if match:
         date_str = match.group(1)
-        date_obj = datetime.strptime(date_str, '%Y%m%d')
         today = datetime.today()
         today_str = today.strftime('%Y%m%d')
         if date_str == today_str:
             return filename
-        new_date_obj = date_obj + timedelta(days=1)
-        new_date_str = new_date_obj.strftime('%Y%m%d')
-        new_filename = filename[:match.start(1)] + new_date_str + filename[match.end(1):]
+        new_filename = filename[:match.start(1)] + today_str + filename[match.end(1):]
         return new_filename
     else:
         return filename
@@ -107,7 +104,7 @@ def run_startup_tasks():
             print("프로그램 경로가 변경되었습니다. 자동 시작 설정을 다시 해주세요.")
             return
 
-        urls = settings.get('urls', [])
+        urls = list(dict.fromkeys(settings.get('urls', [])))  # 중복 제거
         if urls:
             try:
                 webbrowser.open(urls[0])  # 첫 번째 URL은 새 창에서 열기

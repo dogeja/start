@@ -12,6 +12,8 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # 모든 태그와 히스토리를 가져옵니다
 
       - name: Set up environment
         run: |
@@ -34,10 +36,28 @@ jobs:
           pyi-makespec --onefile --noconsole --name "환실련의아침" main.py
           pyinstaller --clean 환실련의아침.spec
 
+      - name: Get previous release body
+        id: get_previous_release
+        run: |
+          $releases = gh release list --limit 2
+          if ($releases.Count -gt 1) {
+            $previousRelease = $releases[1] -split "\t"
+            $previousTag = $previousRelease[0]
+            $previousBody = gh release view $previousTag --json body --jq .body
+            $previousBody = $previousBody -replace '"', '\"'
+            $previousBody = $previousBody -replace '\n', '\n'
+            echo "PREVIOUS_BODY=$previousBody" >> $env:GITHUB_ENV
+          } else {
+            echo "PREVIOUS_BODY=첫 번째 릴리스입니다." >> $env:GITHUB_ENV
+          }
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: ./dist/환실련의아침.exe
+          body: ${{ env.PREVIOUS_BODY }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

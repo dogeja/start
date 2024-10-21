@@ -4,7 +4,7 @@ import json
 import winreg
 from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QListWidget, QLineEdit, QFileDialog, QLabel, QMessageBox, QStatusBar
 from PyQt5.QtCore import QTimer
-from utils import check_for_updates, download_update, apply_update, cleanup_temp_files, update_autostart, run_startup_tasks, process_folder
+from utils import check_and_cleanup_autostart,check_for_updates, download_update, apply_update, cleanup_temp_files, update_autostart, run_startup_tasks, process_folder
 from version import __version__
 
 class UrlFolderSelector(QMainWindow):
@@ -56,6 +56,13 @@ class UrlFolderSelector(QMainWindow):
         autostart_btn.clicked.connect(self.setup_autostart)
         self.layout.addWidget(autostart_btn)
         
+        # 자동 시작 초기화..버튼
+        cleanup_btn = QPushButton('자동 시작 초기화')
+        cleanup_btn.clicked.connect(self.cleanup_autostart)
+        self.layout.addWidget(cleanup_btn)
+
+    
+                
         # 테스트 실행 버튼
         test_run_btn = QPushButton('테스트 실행')
         test_run_btn.clicked.connect(self.test_run)
@@ -63,7 +70,14 @@ class UrlFolderSelector(QMainWindow):
         
         self.statusBar = self.statusBar()
         self.load_settings()
-
+        
+    def cleanup_autostart(self):
+        success, message = check_and_cleanup_autostart()
+        if success:
+            QMessageBox.information(self, "성공", message)
+        else:
+            QMessageBox.warning(self, "오류", message)
+            
     def check_updates(self):
         update_available, latest_version = check_for_updates(__version__)
         if update_available:

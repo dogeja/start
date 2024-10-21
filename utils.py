@@ -132,7 +132,28 @@ def cleanup_temp_files():
             os.remove('update.bat')
         except:
             pass
+        
+def check_and_cleanup_autostart():
+    try:
+        # 레지스트리 확인
+        key = winreg.HKEY_CURRENT_USER
+        key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
+        with winreg.OpenKey(key, key_path, 0, winreg.KEY_ALL_ACCESS) as registry_key:
+            try:
+                winreg.DeleteValue(registry_key, "환실련의아침")
+            except FileNotFoundError:
+                pass
 
+        # 시작 폴더 확인
+        startup_folder = os.path.join(os.path.expanduser("~"), "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "Startup")
+        bat_file = os.path.join(startup_folder, "run_url_folder_script.bat")
+        if os.path.exists(bat_file):
+            os.remove(bat_file)
+
+        return True, "자동 시작 설정을 초기화했습니다."
+    except Exception as e:
+        return False, f"오류 발생: {str(e)}"
+    
 def update_autostart():
     try:
         current_exe = sys.executable if getattr(sys, 'frozen', False) else sys.argv[0]

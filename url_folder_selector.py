@@ -82,32 +82,32 @@ class UrlFolderSelector(QMainWindow):
         try:
             print("업데이트 확인 시작")  # 로그 추가
             update_available, latest_version = check_for_updates(__version__)
-            
+
             if update_available and latest_version:
                 print(f"새 버전 발견: {latest_version}")  # 로그 추가
                 reply = QMessageBox.question(self, '업데이트 가능', 
                     f'새 버전 ({latest_version})이 있습니다. 지금 업데이트하시겠습니까?',
                     QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
-                
+
                 if reply == QMessageBox.Yes:
                     print("업데이트 시작")  # 로그 추가
                     self.statusBar.showMessage("업데이트 다운로드 중...")
-                    
+
                     if download_update(latest_version):
                         print("다운로드 성공")  # 로그 추가
                         QMessageBox.information(self, '업데이트 준비 완료', 
-                            '새 버전이 다운로드되었습니다. 프로그램을 재시작하여 업데이트를 적용합니다.')
+                            '새 버전이 다운로드되었습니다. 프로그램을 재시작하여 업데이트를 적용합니다!')
                         apply_update()
                     else:
                         print("다운로드 실패")  # 로그 추가
                         QMessageBox.warning(self, '업데이트 실패', 
                             '업데이트 다운로드에 실패했습니다. 나중에 다시 시도해주세요.')
-                        
+
         except Exception as e:
             print(f"업데이트 프로세스 중 오류 발생: {str(e)}")
             QMessageBox.warning(self, '업데이트 오류', 
                 f'업데이트 중 오류가 발생했습니다: {str(e)}')
-        
+
         # 3일 후 다시 확인
         QTimer.singleShot(3 * 24 * 60 * 60 * 1000, self.check_updates)
         

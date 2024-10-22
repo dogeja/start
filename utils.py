@@ -33,72 +33,109 @@ def update_date_in_filename(filename):
 
 def check_for_updates(current_version):
     try:
+        print(f"현재 버전: {current_version}")  # 로그 추가
         response = requests.get('https://api.github.com/repos/dogeja/start/releases/latest')
+        print(f"API 응답 상태 코드: {response.status_code}")  # 로그 추가
+        
         if response.status_code == 200:
             latest_release = response.json()
             latest_version = latest_release['tag_name'].lstrip('v')
-            current_version = str(current_version).lstrip('v')  # 버전 문자열 정규화
-            # 버전 비교 로직 개선
-            latest_parts = [int(x) for x in latest_version.split('.')]
-            current_parts = [int(x) for x in current_version.split('.')]
-            is_newer = False
-            for i in range(max(len(latest_parts), len(current_parts))):
-                latest_num = latest_parts[i] if i < len(latest_parts) else 0
-                current_num = current_parts[i] if i < len(current_parts) else 0
-                if latest_num > current_num:
-                    is_newer = True
+            print(f"최신 버전: {latest_version}")  # 로그 추가
+            
+            # 버전 비교를 위해 숫자로 변환
+            current_nums = [int(x) for x in current_version.lstrip('v').split('.')]
+            latest_nums = [int(x) for x in latest_version.split('.')]
+            
+            # 버전 비교
+            is_update_needed = False
+            for current, latest in zip(current_nums, latest_nums):
+                if latest > current:
+                    is_update_needed = True
                     break
-                elif latest_num < current_num:
+                elif current > latest:
                     break
-            return is_newer, latest_version
+            
+            print(f"업데이트 필요: {is_update_needed}")  # 로그 추가
+            return is_update_needed, latest_version
         else:
-            print(f"API request failed with status code: {response.status_code}")
+            print("API 요청 실패")
             return False, None
     except Exception as e:
-        print(f"Error checking for updates: {e}")
+        print(f"업데이트 확인 중 오류 발생: {str(e)}")
         return False, None
 
 def download_update(version):
-    url = f'https://github.com/dogeja/start/releases/download/v{version}/환실련의아침.exe'
-    response = requests.get(url)
-    if response.status_code == 200:
-        current_exe = sys.executable
-        temp_exe = current_exe + '.new'
-        with open(temp_exe, 'wb') as f:
-            f.write(response.content)
-        return True
-    return False
+    try:
+        print(f"다운로드 시작: 버전 {version}")  # 로그 추가
+        url = f'https://github.com/dogeja/start/releases/download/v{version}/환실련의아침.exe'
+        print(f"다운로드 URL: {url}")  # 로그 추가
+        
+        response = requests.get(url, stream=True)
+        print(f"다운로드 응답 상태 코드: {response.status_code}")  # 로그 추가
+        
+        if response.status_code == 200:
+            current_exe = sys.executable
+            temp_exe = current_exe + '.new'
+            print(f"임시 파일 경로: {temp_exe}")  # 로그 추가
+            
+            with open(temp_exe, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    if chunk:
+                        f.write(chunk)
+            print("다운로드 완료")  # 로그 추가
+            return True
+        else:
+            print("다운로드 실패")
+            return False
+    except Exception as e:
+        print(f"다운로드 중 오류 발생: {str(e)}")
+        return False
 
 def apply_update():
     try:
         current_exe = sys.executable
         temp_exe = current_exe + '.new'
+        
+        print(f"현재 실행 파일: {current_exe}")  # 로그 추가
+        print(f"새 실행 파일: {temp_exe}")  # 로그 추가
+        
         if not os.path.exists(temp_exe):
             print("업데이트 파일이 존재하지 않습니다.")
             return False
 
+        # 업데이트 배치 파일 생성
+        batch_file = 'update.bat'
         batch_content = f'''
 @echo off
+echo 업데이트를 시작합니다...
 :loop
+timeout /t 1 /nobreak > nul
 tasklist | find /i "{os.path.basename(current_exe)}" > nul
 if errorlevel 1 (
+    echo 프로그램이 종료되었습니다. 업데이트를 진행합니다...
     move /y "{temp_exe}" "{current_exe}"
+    if errorlevel 1 (
+        echo 파일 이동 실패
+        exit /b 1
+    )
     start "" "{current_exe}"
     del "%~f0"
+    exit
 ) else (
-    timeout /t 1 > nul
+    echo 프로그램이 아직 실행 중입니다. 대기 중...
     goto loop
 )
 '''
-        
-        with open('update.bat', 'w', encoding='utf-8') as f:
+        with open(batch_file, 'w', encoding='utf-8') as f:
             f.write(batch_content)
         
-        subprocess.Popen('update.bat', shell=True)
+        print("업데이트 배치 파일 생성 완료")  # 로그 추가
+        subprocess.Popen(batch_file, shell=True)
+        print("업데이트 프로세스 시작")  # 로그 추가
         sys.exit()
         
     except Exception as e:
-        print(f"업데이트 적용 중 오류 발생: {e}")
+        print(f"업데이트 적용 중 오류 발생: {str(e)}")
         return False
 
 def process_folder(folder_path):

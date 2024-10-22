@@ -36,28 +36,27 @@ jobs:
           pyi-makespec --onefile --noconsole --name "환실련의아침" main.py
           pyinstaller --clean 환실련의아침.spec
 
-      - name: Get previous release body
-        id: get_previous_release
+      - name: Get release template
+        id: get_template
+        shell: pwsh
         run: |
-          $releases = gh release list --limit 2
-          if ($releases.Count -gt 1) {
-            $previousRelease = $releases[1] -split "\t"
-            $previousTag = $previousRelease[0]
-            $previousBody = gh release view $previousTag --json body --jq .body
-            $previousBody = $previousBody -replace '"', '\"'
-            $previousBody = $previousBody -replace '\n', '\n'
-            echo "PREVIOUS_BODY=$previousBody" >> $env:GITHUB_ENV
+          if (Test-Path "RELEASE_TEMPLATE.md") {
+            $template = Get-Content "RELEASE_TEMPLATE.md" -Raw
+            $template = $template -replace '`', '``'
+            $template = $template -replace '\$', '`$'
+            $template = $template -replace '"', '`"'
+            echo "template<<EOF" >> $env:GITHUB_OUTPUT
+            echo "$template" >> $env:GITHUB_OUTPUT
+            echo "EOF" >> $env:GITHUB_OUTPUT
           } else {
-            echo "PREVIOUS_BODY=첫 번째 릴리스입니다." >> $env:GITHUB_ENV
+            echo "template=No release notes available" >> $env:GITHUB_OUTPUT
           }
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: ./dist/환실련의아침.exe
-          body: ${{ steps.get_previous_release.outputs.PREVIOUS_BODY }}
+          body: ${{ steps.get_template.outputs.template }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

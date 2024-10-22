@@ -32,6 +32,6 @@
 현재 업데이트 중입니다.
 건의사항 환영
 
-![image](./assets/cat.jpg)
+![image](./assets/cat.png)
 
 ⬇️⬇️⬇️**지금즉시다운로드**⬇️⬇️⬇️

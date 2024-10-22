@@ -79,19 +79,23 @@ class UrlFolderSelector(QMainWindow):
             QMessageBox.warning(self, "오류", message)
             
     def check_updates(self):
-        update_available, latest_version = check_for_updates(__version__)
-        if update_available:
-            reply = QMessageBox.question(self, '업데이트 가능', 
-                f'새 버전 ({latest_version})이 있습니다. 지금 업데이트하시겠습니까?',
-                QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
-            
-            if reply == QMessageBox.Yes:
-                if download_update(latest_version):
-                    QMessageBox.information(self, '업데이트 준비 완료', '새 버전이 다운로드되었습니다. 프로그램을 재시작하여 업데이트를 적용합니다.')
-                    apply_update()
-                else:
-                    QMessageBox.warning(self, '업데이트 실패', '업데이트 다운로드에 실패했습니다. 나중에 다시 시도해주세요.')
+        try:
+            update_available, latest_version = check_for_updates(__version__)
+            if update_available and latest_version:
+                reply = QMessageBox.question(self, '업데이트 가능', 
+                    f'새 버전 ({latest_version})이 있습니다. 지금 업데이트하시겠습니까?',
+                    QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
+                
+                if reply == QMessageBox.Yes:
+                    if download_update(latest_version):
+                        QMessageBox.information(self, '업데이트 준비 완료', '새 버전이 다운로드되었습니다. 프로그램을 재시작하여 업데이트를 적용합니다.')
+                        apply_update()
+                    else:
+                        QMessageBox.warning(self, '업데이트 실패', '업데이트 다운로드에 실패했습니다. 나중에 다시 시도해주세요.')
+        except Exception as e:
+            print(f"업데이트 확인 중 오류 발생: {e}")
         
+        # 3일 후 다시 확인
         QTimer.singleShot(3 * 24 * 60 * 60 * 1000, self.check_updates)
         
     def add_url(self):

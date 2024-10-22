@@ -37,7 +37,20 @@ def check_for_updates(current_version):
         if response.status_code == 200:
             latest_release = response.json()
             latest_version = latest_release['tag_name'].lstrip('v')
-            return latest_version > current_version, latest_version
+            current_version = str(current_version).lstrip('v')  # 버전 문자열 정규화
+            # 버전 비교 로직 개선
+            latest_parts = [int(x) for x in latest_version.split('.')]
+            current_parts = [int(x) for x in current_version.split('.')]
+            is_newer = False
+            for i in range(max(len(latest_parts), len(current_parts))):
+                latest_num = latest_parts[i] if i < len(latest_parts) else 0
+                current_num = current_parts[i] if i < len(current_parts) else 0
+                if latest_num > current_num:
+                    is_newer = True
+                    break
+                elif latest_num < current_num:
+                    break
+            return is_newer, latest_version
         else:
             print(f"API request failed with status code: {response.status_code}")
             return False, None
@@ -57,10 +70,14 @@ def download_update(version):
     return False
 
 def apply_update():
-    current_exe = sys.executable
-    temp_exe = current_exe + '.new'
-    
-    batch_content = f'''
+    try:
+        current_exe = sys.executable
+        temp_exe = current_exe + '.new'
+        if not os.path.exists(temp_exe):
+            print("업데이트 파일이 존재하지 않습니다.")
+            return False
+
+        batch_content = f'''
 @echo off
 :loop
 tasklist | find /i "{os.path.basename(current_exe)}" > nul
@@ -73,12 +90,16 @@ if errorlevel 1 (
     goto loop
 )
 '''
-    
-    with open('update.bat', 'w') as f:
-        f.write(batch_content)
-    
-    subprocess.Popen('update.bat', shell=True)
-    sys.exit()
+        
+        with open('update.bat', 'w', encoding='utf-8') as f:
+            f.write(batch_content)
+        
+        subprocess.Popen('update.bat', shell=True)
+        sys.exit()
+        
+    except Exception as e:
+        print(f"업데이트 적용 중 오류 발생: {e}")
+        return False
 
 def process_folder(folder_path):
     files = [os.path.join(folder_path, f) for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))]

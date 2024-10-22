@@ -67,7 +67,7 @@ def check_for_updates(current_version):
 def download_update(version):
     try:
         print(f"다운로드 시작: 버전 {version}")  # 로그 추가
-        url = f'https://github.com/dogeja/start/releases/download/v{version}/환실련의아침.exe'
+        url = f'https://github.com/dogeja/start/releases/download/v{version}/default.exe'
         print(f"다운로드 URL: {url}")  # 로그 추가
         
         response = requests.get(url, stream=True)

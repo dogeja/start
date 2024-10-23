@@ -20,7 +20,7 @@ class UrlFolderSelector(QMainWindow):
         
     def initUI(self):
         self.setWindowTitle(f'🌍환실련의아침✨ v{__version__}')
-        self.setGeometry(100, 100, 600, 400)
+        self.setGeometry(100, 100, 800, 400)
         
         # URL 섹션
         self.layout.addWidget(QLabel('부팅 시 자동으로 열릴 주소:'))
@@ -52,31 +52,26 @@ class UrlFolderSelector(QMainWindow):
         save_btn = QPushButton('설정 저장')
         save_btn.clicked.connect(self.save_settings)
         self.layout.addWidget(save_btn)
-        autostart_btn = QPushButton('자동 시작 설정')
+        autostart_btn = QPushButton('시작 프로그램으로 설정')
         autostart_btn.clicked.connect(self.setup_autostart)
         self.layout.addWidget(autostart_btn)
         
         # 자동 시작 초기화..버튼
-        cleanup_btn = QPushButton('자동 시작 초기화')
+        cleanup_btn = QPushButton('시작 프로그램에서 제거')
         cleanup_btn.clicked.connect(self.cleanup_autostart)
         self.layout.addWidget(cleanup_btn)
 
     
                 
         # 테스트 실행 버튼
-        test_run_btn = QPushButton('테스트 실행')
+        test_run_btn = QPushButton('!테스트 실행!')
         test_run_btn.clicked.connect(self.test_run)
         self.layout.addWidget(test_run_btn)
         
         self.statusBar = self.statusBar()
         self.load_settings()
         
-    def cleanup_autostart(self):
-        success, message = check_and_cleanup_autostart()
-        if success:
-            QMessageBox.information(self, "성공", message)
-        else:
-            QMessageBox.warning(self, "오류", message)
+
             
     def check_updates(self):
         try:
@@ -138,6 +133,7 @@ class UrlFolderSelector(QMainWindow):
         }
         with open(self.settings_file, 'w') as f:
             json.dump(settings, f)
+        QMessageBox.information(self, "성공", "설정이 적용되었습니다!")
         self.statusBar.showMessage("설정이 적용되었습니다!", 3000)
     
     def load_settings(self):
@@ -155,6 +151,13 @@ class UrlFolderSelector(QMainWindow):
             self.statusBar.showMessage("이제 부팅 시 자동 실행됩니다!", 3000)
         else:
             QMessageBox.warning(self, "오류", f"자동 시작 설정 중 오류가 발생했습니다: {message}")
+
+    def cleanup_autostart(self):
+        success, message = check_and_cleanup_autostart()
+        if success:
+            QMessageBox.information(self, "성공", message)
+        else:
+            QMessageBox.warning(self, "오류", message)
     
     def test_run(self):
         self.save_settings()

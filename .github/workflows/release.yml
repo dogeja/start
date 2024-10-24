@@ -21,7 +21,7 @@ jobs:
           echo "PYTHONUTF8=1" >> $env:GITHUB_ENV
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.9"
 
@@ -30,6 +30,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pyinstaller
+
       - name: Build with PyInstaller
         run: |
           pyi-makespec --onefile --noconsole --hidden-import=PyQt5.sip --collect-all PyQt5 --name "환실련의아침" main.py

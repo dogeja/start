@@ -1,8 +1,8 @@
 import sys
 from PyQt5.QtWidgets import QApplication
 from url_folder_selector import UrlFolderSelector
-from utils import run_startup_tasks, UpdateDialog
-from update_notes import UpdateNotes
+from utils import run_startup_tasks
+from update_notes import UpdateNotes, UpdateDialog  
 from version import __version__
 
 if __name__ == '__main__':

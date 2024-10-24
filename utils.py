@@ -33,14 +33,14 @@ def update_date_in_filename(filename):
 
 def check_for_updates(current_version):
     try:
-        print(f"현재 버전: {current_version}")  # 로그 추가
+        print(f"현재 버전: {current_version}")
         response = requests.get('https://api.github.com/repos/dogeja/start/releases/latest')
-        print(f"API 응답 상태 코드: {response.status_code}")  # 로그 추가
+        print(f"API 응답 상태 코드: {response.status_code}")
         
         if response.status_code == 200:
             latest_release = response.json()
             latest_version = latest_release['tag_name'].lstrip('v')
-            print(f"최신 버전: {latest_version}")  # 로그 추가
+            print(f"최신 버전: {latest_version}")
             
             # 버전 비교를 위해 숫자로 변환
             current_nums = [int(x) for x in current_version.lstrip('v').split('.')]
@@ -55,7 +55,7 @@ def check_for_updates(current_version):
                 elif current > latest:
                     break
             
-            print(f"업데이트 필요: {is_update_needed}")  # 로그 추가
+            print(f"업데이트 필요: {is_update_needed}")
             return is_update_needed, latest_version
         else:
             print("API 요청 실패")
@@ -66,23 +66,23 @@ def check_for_updates(current_version):
 
 def download_update(version):
     try:
-        print(f"다운로드 시작: 버전 {version}")  # 로그 추가
+        print(f"다운로드 시작: 버전 {version}")
         url = f'https://github.com/dogeja/start/releases/download/v{version}/default.exe'
-        print(f"다운로드 URL: {url}")  # 로그 추가
+        print(f"다운로드 URL: {url}")
         
         response = requests.get(url, stream=True)
-        print(f"다운로드 응답 상태 코드: {response.status_code}")  # 로그 추가
+        print(f"다운로드 응답 상태 코드: {response.status_code}")
         
         if response.status_code == 200:
             current_exe = sys.executable
             temp_exe = current_exe + '.new'
-            print(f"임시 파일 경로: {temp_exe}")  # 로그 추가
+            print(f"임시 파일 경로: {temp_exe}")
             
             with open(temp_exe, 'wb') as f:
                 for chunk in response.iter_content(chunk_size=8192):
                     if chunk:
                         f.write(chunk)
-            print("다운로드 완료")  # 로그 추가
+            print("다운로드 완료")
             return True
         else:
             print("다운로드 실패")
@@ -95,6 +95,9 @@ def apply_update():
     try:
         current_exe = sys.executable
         temp_exe = current_exe + '.new'
+        
+        print(f"현재 실행 파일: {current_exe}")
+        print(f"새 실행 파일: {temp_exe}")
         
         if not os.path.exists(temp_exe):
             print("업데이트 파일이 존재하지 않습니다.")
@@ -121,7 +124,9 @@ if errorlevel 1 (
         with open('update.bat', 'w', encoding='utf-8') as f:
             f.write(batch_content)
         
+        print("업데이트 배치 파일 생성 완료")
         subprocess.Popen('update.bat', shell=True)
+        print("업데이트 프로세스 시작")
         sys.exit()
         
     except Exception as e:
@@ -147,23 +152,28 @@ def run_startup_tasks():
         with open(settings_file, 'r') as f:
             settings = json.load(f)
         
-        program_path = settings.get('program_path')
-        if not program_path or not os.path.exists(program_path):
-            print("프로그램 경로가 변경되었습니다. 자동 시작 설정을 다시 해주세요.")
-            return
-
-        urls = list(dict.fromkeys(settings.get('urls', [])))  # 중복 제거
+        urls = settings.get('urls', [])
         if urls:
             try:
-                webbrowser.open(urls[0])  # 첫 번째 URL은 새 창에서 열기
+                webbrowser.open(urls[0])
                 for url in urls[1:]:
-                    webbrowser.open_new_tab(url)  # 나머지 URL은 새 탭에서 열기
+                    webbrowser.open_new_tab(url)
             except Exception as e:
                 print(f"URL을 여는 중 오류가 발생했습니다: {e}")
                     
         folder_path = settings.get('folder', '')
         if folder_path:
-            process_folder(folder_path)
+            files = [os.path.join(folder_path, f) for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))]
+            if files:
+                most_recent_file = max(files, key=os.path.getmtime)
+                new_file_name = os.path.join(folder_path, update_date_in_filename(os.path.basename(most_recent_file)))
+                success, message = safe_copy(most_recent_file, new_file_name)
+                if success:
+                    print(f"Duplicated file: {most_recent_file} to {new_file_name}")
+                    os.startfile(new_file_name)
+                else:
+                    print(message)
+                os.startfile(folder_path)
     else:
         print("설정 파일을 찾을 수 없습니다.")
 

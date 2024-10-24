@@ -30,11 +30,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pyinstaller
-
       - name: Build with PyInstaller
         run: |
-          pyi-makespec --onefile --noconsole --name "환실련의아침" main.py
-          pyinstaller --clean 환실련의아침.spec
+          pyi-makespec --onefile --noconsole --hidden-import=PyQt5.sip --collect-all PyQt5 --name "환실련의아침" main.py
+          pyinstaller --clean --runtime-tmpdir=. 환실련의아침.spec
 
       - name: Get release template
         id: get_template

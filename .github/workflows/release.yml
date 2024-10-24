@@ -16,9 +16,10 @@ jobs:
           fetch-depth: 0 # 모든 태그와 히스토리를 가져옵니다
 
       - name: Set up environment
+        shell: bash
         run: |
-          echo "PYTHONIOENCODING=utf-8" >> $env:GITHUB_ENV
-          echo "PYTHONUTF8=1" >> $env:GITHUB_ENV
+          echo "PYTHONIOENCODING=utf-8" >> $GITHUB_ENV
+          echo "PYTHONUTF8=1" >> $GITHUB_ENV
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -33,7 +34,9 @@ jobs:
 
       - name: Build with PyInstaller
         run: |
-          Remove-Item -Path "환실련의아침.spec" -Force
+          if (Test-Path -Path "환실련의아침.spec") {
+            Remove-Item -Path "환실련의아침.spec" -Force
+          }
           pyi-makespec --onefile --noconsole --hidden-import=PyQt5.sip --collect-all PyQt5 --name "환실련의아침" main.py
           pyinstaller --clean --runtime-tmpdir=. 환실련의아침.spec
 

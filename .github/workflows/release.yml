@@ -33,6 +33,7 @@ jobs:
 
       - name: Build with PyInstaller
         run: |
+          Remove-Item -Path "환실련의아침.spec" -Force
           pyi-makespec --onefile --noconsole --hidden-import=PyQt5.sip --collect-all PyQt5 --name "환실련의아침" main.py
           pyinstaller --clean --runtime-tmpdir=. 환실련의아침.spec
 

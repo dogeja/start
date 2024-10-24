@@ -11,7 +11,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # 모든 태그와 히스토리를 가져옵니다
 
@@ -21,7 +21,7 @@ jobs:
           echo "PYTHONUTF8=1" >> $env:GITHUB_ENV
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v4
         with:
           python-version: "3.9"
 

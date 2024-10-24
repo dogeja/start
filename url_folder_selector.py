@@ -20,7 +20,7 @@ class UrlFolderSelector(QMainWindow):
         
     def initUI(self):
         self.setWindowTitle(f'🌍환실련의아침✨ v{__version__}')
-        self.setGeometry(100, 100, 800, 400)
+        self.setGeometry(100, 100, 600, 800)
         
         # URL 섹션
         self.layout.addWidget(QLabel('부팅 시 자동으로 열릴 주소:'))

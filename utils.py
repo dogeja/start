@@ -2,7 +2,7 @@ import os
 import json
 import webbrowser
 import shutil
-from datetime import datetime, timedelta
+from datetime import datetime
 import re
 import requests
 import sys
@@ -96,42 +96,32 @@ def apply_update():
         current_exe = sys.executable
         temp_exe = current_exe + '.new'
         
-        print(f"현재 실행 파일: {current_exe}")  # 로그 추가
-        print(f"새 실행 파일: {temp_exe}")  # 로그 추가
-        
         if not os.path.exists(temp_exe):
             print("업데이트 파일이 존재하지 않습니다.")
             return False
 
-        # 업데이트 배치 파일 생성
-        batch_file = 'update.bat'
         batch_content = f'''
 @echo off
-echo 업데이트를 시작합니다...
 :loop
 timeout /t 1 /nobreak > nul
 tasklist | find /i "{os.path.basename(current_exe)}" > nul
 if errorlevel 1 (
-    echo 프로그램이 종료되었습니다. 업데이트를 진행합니다...
     move /y "{temp_exe}" "{current_exe}"
     if errorlevel 1 (
         echo 파일 이동 실패
         exit /b 1
     )
-    start "" "{current_exe}"
+    start "" "{current_exe}" --updated
     del "%~f0"
     exit
 ) else (
-    echo 프로그램이 아직 실행 중입니다. 대기 중...
     goto loop
 )
 '''
-        with open(batch_file, 'w', encoding='utf-8') as f:
+        with open('update.bat', 'w', encoding='utf-8') as f:
             f.write(batch_content)
         
-        print("업데이트 배치 파일 생성 완료")  # 로그 추가
-        subprocess.Popen(batch_file, shell=True)
-        print("업데이트 프로세스 시작")  # 로그 추가
+        subprocess.Popen('update.bat', shell=True)
         sys.exit()
         
     except Exception as e:

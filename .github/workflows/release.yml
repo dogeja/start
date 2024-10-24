@@ -35,10 +35,13 @@ jobs:
       - name: Build with PyInstaller
         run: |
           if (Test-Path -Path "환실련의아침.spec") {
-            Remove-Item -Path "환실련의아침.spec" -Force
+            # .spec 파일이 있는 경우, 추가 옵션 없이 빌드
+            pyinstaller --clean 환실련의아침.spec
+          } else {
+            # .spec 파일이 없는 경우, makespec을 통해 생성 후 빌드
+            pyi-makespec --onefile --noconsole --hidden-import=PyQt5.sip --collect-all PyQt5 --name "환실련의아침" main.py
+            pyinstaller --clean 환실련의아침.spec
           }
-          pyi-makespec --onefile --noconsole --hidden-import=PyQt5.sip --collect-all PyQt5 --name "환실련의아침" main.py
-          pyinstaller --clean --runtime-tmpdir=. 환실련의아침.spec
 
       - name: Get release template
         id: get_template
